@@ -12,8 +12,8 @@ const RichTextEditor = dynamic(
   { 
     ssr: false,
     loading: () => (
-      <div className="flex-1 flex items-center justify-center bg-haptic-editor">
-        <div className="text-haptic-dim text-sm">Loading editor...</div>
+      <div className="flex-1 flex items-center justify-center bg-background">
+        <div className="text-muted-foreground text-sm">Loading editor...</div>
       </div>
     )
   }
@@ -55,14 +55,14 @@ export function Editor({ file, editorMode, onContentChange }: EditorProps) {
 
   if (!file) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-haptic-editor">
-        <p className="text-haptic-dim text-sm">Select a note to start editing</p>
+      <div className="flex-1 flex items-center justify-center bg-background">
+        <p className="text-muted-foreground text-sm">Select a note to start editing</p>
       </div>
     );
   }
 
   // Common container styles for both modes
-  const containerClass = "flex-1 overflow-y-auto bg-haptic-editor";
+  const containerClass = "flex-1 overflow-y-auto bg-background";
   const contentClass = "max-w-[42rem] mx-auto px-8 py-8";
 
   // Rich Text Mode (BlockNote)
