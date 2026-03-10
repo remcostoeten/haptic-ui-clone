@@ -1,5 +1,5 @@
 import type { FolderId, MarkdownContent, NoteId } from "@/core/shared/persistence-types";
-import type { NoteEditorMode, RichTextDocument } from "@/types/notes";
+import type { JournalMetadata, NoteEditorMode, RichTextDocument } from "@/types/notes";
 
 export type CreateNoteInput = {
   id?: NoteId;
@@ -7,6 +7,7 @@ export type CreateNoteInput = {
   content: MarkdownContent;
   richContent?: RichTextDocument;
   preferredEditorMode?: NoteEditorMode;
+  journalMeta?: JournalMetadata;
   parentId?: FolderId | null;
   createdAt?: Date;
   updatedAt?: Date;
@@ -18,6 +19,7 @@ export type UpdateNoteInput = {
   content?: MarkdownContent;
   richContent?: RichTextDocument;
   preferredEditorMode?: NoteEditorMode;
+  journalMeta?: JournalMetadata;
   parentId?: FolderId | null;
   updatedAt?: Date;
 };

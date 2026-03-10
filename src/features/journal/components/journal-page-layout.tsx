@@ -3,9 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { format, isValid, parseISO } from "date-fns";
+import { format, isValid, parseISO, addDays, subDays } from "date-fns";
 import { Code, Type, ChevronLeft } from "lucide-react";
-import { useShortcut } from "@remcostoeten/use-shortcut";
 import { LayoutContainer } from "@/features/layout/components/layout-container";
 import { IconRail } from "@/features/layout/components/icon-rail";
 import { useJournalStore } from "@/features/journal/store";
@@ -15,9 +14,13 @@ import { JournalEditor } from "./journal-editor";
 import { RichJournalEditor } from "./rich-journal-editor";
 import { JournalDatabaseView } from "./journal-database-view";
 import { CommandPalette, type CommandPaletteItem } from "@/shared/ui/command-palette";
-import { ShortcutHelpDialog, type ShortcutHelpGroup } from "@/shared/ui/shortcut-help-dialog";
+import type { ShortcutHelpGroup } from "@/shared/ui/shortcut-help-dialog";
+import { ShortcutPopoverButton } from "@/shared/ui/shortcut-popover-button";
 import { triggerNativeFeedback } from "@/shared/lib/native-feedback";
 import { SaveStatusBadge } from "@/shared/components/save-status-badge";
+import { useCentralizedShortcuts } from "@/shared/hooks/use-centralized-shortcuts";
+import { ShortcutsDialog } from "@/shared/ui/shortcuts-dialog";
+import { SHORTCUT_SCOPES } from "@/shared/lib/shortcuts";
 
 type JournalView = "list" | "editor";
 
@@ -71,7 +74,6 @@ function JournalContentSkeleton() {
 export function JournalPageLayout() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const $ = useShortcut({ ignoreInputs: true });
   const isHydrated = useJournalStore((state) => state.isHydrated);
   const getEntryByDate = useJournalStore((state) => state.getEntryByDate);
   const getEntrySaveState = useJournalStore((state) => state.getEntrySaveState);
@@ -79,7 +81,7 @@ export function JournalPageLayout() {
   const [showSettings, setShowSettings] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
-  const [showShortcutHelp, setShowShortcutHelp] = useState(false);
+  const [showShortcutsDialog, setShowShortcutsDialog] = useState(false);
   const [editorMode, setEditorMode] = useState<"plain" | "rich">("plain");
   const [view, setView] = useState<JournalView>("list");
   const ui = useDocumentStore((s) => s.ui);
@@ -161,55 +163,48 @@ export function JournalPageLayout() {
     setView("editor");
   }, []);
 
+  const handlePrevDay = useCallback(() => {
+    triggerNativeFeedback("selection");
+    setSelectedDate(prev => subDays(prev, 1));
+    setView("editor");
+  }, []);
+
+  const handleNextDay = useCallback(() => {
+    triggerNativeFeedback("selection");
+    setSelectedDate(prev => addDays(prev, 1));
+    setView("editor");
+  }, []);
+
   const handleOpenCommandPalette = useCallback(() => {
     triggerNativeFeedback("selection");
     setShowCommandPalette(true);
   }, []);
 
-  const handleOpenShortcutHelp = useCallback(() => {
+  const handleShowShortcuts = useCallback(() => {
     triggerNativeFeedback("selection");
-    setShowShortcutHelp(true);
+    setShowShortcutsDialog(true);
   }, []);
 
-  useEffect(() => {
-    $.setScopes(["journal"]);
-
-    const bindings = [
-      $.in("journal").mod.key("k").except("typing").on(handleOpenCommandPalette, {
-        preventDefault: true,
-        description: "Open the journal command palette",
-      }),
-      $.in("journal").mod.shift.key("p").except("typing").on(handleOpenCommandPalette, {
-        preventDefault: true,
-        description: "Open the journal command palette",
-      }),
-      $.in("journal").mod.key("slash").except("typing").on(handleToggleSidebar, {
-        description: "Toggle sidebar",
-      }),
-      $.in("journal").mod.key("comma").except("typing").on(handleOpenSettings, {
-        preventDefault: true,
-        description: "Open settings",
-      }),
-      $.in("journal").mod.key("e").except("typing").on(handleToggleEditorMode, {
-        description: "Switch journal editor mode",
-      }),
-      $.in("journal").shift.key("slash").except("typing").on(handleOpenShortcutHelp, {
-        description: "Open shortcut help",
-      }),
-    ];
-
-    return () => {
-      bindings.forEach((binding) => binding.unbind());
-    };
-  }, [
-    $,
-    handleOpenCommandPalette,
-    handleOpenSettings,
-    handleOpenShortcutHelp,
-    handleToggleEditorMode,
-    handleBackToList,
-    handleToggleSidebar,
-  ]);
+  useCentralizedShortcuts({
+    handlers: {
+      OPEN_COMMAND_PALETTE: handleOpenCommandPalette,
+      OPEN_SETTINGS: handleOpenSettings,
+      TOGGLE_SIDEBAR: handleToggleSidebar,
+      NEW_JOURNAL_ENTRY: handleNewEntry,
+      PREV_DAY: handlePrevDay,
+      NEXT_DAY: handleNextDay,
+      TODAY: handleGoToToday,
+      TOGGLE_EDITOR_MODE: handleToggleEditorMode,
+      SHOW_SHORTCUTS: handleShowShortcuts,
+      ESCAPE: () => {
+        if (showCommandPalette) setShowCommandPalette(false);
+        else if (showSettings) setShowSettings(false);
+        else if (showShortcutsDialog) setShowShortcutsDialog(false);
+        else if (view === "editor") setView("list");
+      },
+    },
+    activeScopes: [SHORTCUT_SCOPES.JOURNAL, SHORTCUT_SCOPES.GLOBAL, SHORTCUT_SCOPES.EDITOR],
+  });
 
   const commandItems: CommandPaletteItem[] = [
     {
@@ -330,6 +325,14 @@ export function JournalPageLayout() {
 
                   <div className="ml-auto flex items-center gap-1">
                     <SaveStatusBadge status={selectedEntrySaveState} className="mr-2" />
+                    {!isMobile && (
+                      <ShortcutPopoverButton
+                        groups={shortcutGroups}
+                        combo="shift+/"
+                        label="Shortcut help"
+                        iconOnly
+                      />
+                    )}
                     <button
                       onClick={handleToggleEditorMode}
                       className="pressable flex h-7 items-center gap-1.5 rounded-xl px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
@@ -389,11 +392,10 @@ export function JournalPageLayout() {
         items={commandItems}
         description="Journal actions and route navigation."
       />
-      <ShortcutHelpDialog
-        open={showShortcutHelp}
-        onOpenChange={setShowShortcutHelp}
-        groups={shortcutGroups}
-        description="Global shortcuts for the journal workspace."
+      <ShortcutsDialog
+        isOpen={showShortcutsDialog}
+        onClose={() => setShowShortcutsDialog(false)}
+        activeScopes={[SHORTCUT_SCOPES.JOURNAL, SHORTCUT_SCOPES.GLOBAL, SHORTCUT_SCOPES.EDITOR]}
       />
     </LayoutContainer>
   );

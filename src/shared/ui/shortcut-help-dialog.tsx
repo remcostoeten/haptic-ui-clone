@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/dialog";
+import { Kbd } from "@/shared/ui/kbd";
 
 export type ShortcutHelpGroup = {
   id: string;
@@ -58,9 +59,7 @@ export function ShortcutHelpDialog({
                         <div className="text-xs text-muted-foreground">{shortcut.description}</div>
                       ) : null}
                     </div>
-                    <span className="shrink-0 rounded-md border border-border/60 bg-card px-2 py-1 font-mono text-[11px] text-muted-foreground">
-                      {shortcut.combo}
-                    </span>
+                    <Kbd combo={shortcut.combo} className="shrink-0 bg-card" />
                   </div>
                 ))}
               </div>

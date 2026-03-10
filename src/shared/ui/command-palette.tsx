@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Command, Search } from "lucide-react";
-import { cn } from "@/shared/lib/utils";
 import { triggerNativeFeedback } from "@/shared/lib/native-feedback";
+import { Kbd } from "@/shared/ui/kbd";
 import {
   Dialog,
   DialogContent,
@@ -66,19 +66,25 @@ export function CommandPalette({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="native-panel max-h-[80vh] overflow-hidden border-border/70 p-0 shadow-[0_24px_80px_rgba(0,0,0,0.42)] sm:max-w-2xl">
-        <div className="pointer-events-none absolute inset-x-6 top-0 h-16 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_70%)]" />
-        <DialogHeader className="border-b border-border/60 px-5 pb-4 pt-5">
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <Command className="h-4 w-4 text-muted-foreground" strokeWidth={1.7} />
+      <DialogContent className="max-h-[80vh] overflow-hidden rounded-[1.5rem] border border-border/70 bg-background/80 p-0 shadow-2xl backdrop-blur-2xl sm:max-w-2xl">
+        {/* Subtle top glare */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+        <DialogHeader className="px-5 pt-5 pb-3">
+          <DialogTitle className="flex items-center gap-2.5 text-base font-semibold">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-border/80 bg-accent/50 shadow-sm">
+              <Command className="h-4 w-4 text-foreground/80" strokeWidth={1.8} />
+            </div>
             {title}
           </DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogDescription className="mt-1 text-sm text-muted-foreground/80">
+            {description}
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="border-b border-border/50 px-4 py-3">
-          <label className="native-surface flex items-center gap-3 rounded-[1.15rem] border border-border/70 px-3 py-3">
-            <Search className="h-4 w-4 text-muted-foreground" strokeWidth={1.6} />
+        <div className="px-3 pb-3">
+          <div className="relative flex items-center rounded-2xl border border-border/60 bg-accent/30 shadow-inner">
+            <Search className="absolute left-4 h-[18px] w-[18px] text-muted-foreground/60" strokeWidth={2} />
             <input
               autoFocus
               type="text"
@@ -91,46 +97,53 @@ export function CommandPalette({
                 }
               }}
               placeholder="Search commands..."
-              className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+              className="w-full bg-transparent py-3.5 pl-11 pr-4 text-sm font-medium placeholder:text-muted-foreground/50 focus:outline-none"
             />
-          </label>
+          </div>
         </div>
 
-        <div className="max-h-[52vh] overflow-y-auto px-2 py-2">
+        <div className="max-h-[45vh] overflow-y-auto px-2 pb-2">
           {filteredItems.length > 0 ? (
-            filteredItems.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => runItem(item)}
-                className="pressable native-surface flex w-full items-center gap-3 rounded-[1.15rem] border border-transparent px-3 py-3 text-left transition-colors hover:border-border/60 hover:bg-accent/55"
-              >
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium text-foreground">{item.label}</div>
-                    {item.description ? (
-                      <div className="truncate text-xs text-muted-foreground">
-                        {item.description}
+            <div className="space-y-0.5">
+              {filteredItems.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => runItem(item)}
+                  className="group flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-accent/60 focus:bg-accent/80 focus:outline-none"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-transparent bg-transparent transition-colors group-hover:border-border/60 group-hover:bg-background/80">
+                      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/60 transition-colors group-hover:text-foreground" strokeWidth={2} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="truncate text-[13px] font-medium text-foreground/90 transition-colors group-hover:text-foreground">
+                        {item.label}
                       </div>
-                    ) : null}
+                      {item.description ? (
+                        <div className="mt-0.5 truncate text-[11px] text-muted-foreground/70">
+                          {item.description}
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
-                {item.shortcut ? (
-                  <span
-                    className={cn(
-                      "shrink-0 rounded-md border border-border/60 bg-background/80 px-2 py-1",
-                      "font-mono text-[11px] text-muted-foreground",
-                    )}
-                  >
-                    {item.shortcut}
-                  </span>
-                ) : null}
-              </button>
-            ))
+                  {item.shortcut ? (
+                    <div className="ml-3 shrink-0">
+                      <Kbd combo={item.shortcut} className="bg-transparent shadow-none border-border/40 group-hover:bg-background/50 group-hover:border-border/80" />
+                    </div>
+                  ) : null}
+                </button>
+              ))}
+            </div>
           ) : (
-            <div className="px-4 py-10 text-center text-sm text-muted-foreground">
-              No commands match “{query}”.
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-border/50 bg-accent/30 shadow-sm">
+                <Search className="h-5 w-5 text-muted-foreground/50" strokeWidth={2} />
+              </div>
+              <p className="text-[13px] font-medium text-foreground/80">No results found</p>
+              <p className="mt-1 text-[12px] text-muted-foreground/70">
+                No commands match "{query}"
+              </p>
             </div>
           )}
         </div>

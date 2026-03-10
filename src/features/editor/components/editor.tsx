@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
+import { FileText } from "lucide-react";
 import { NoteFile, RichTextDocument } from "@/types/notes";
 import { MarkdownRenderer } from "./markdown-renderer";
 
@@ -79,8 +80,16 @@ export function Editor({ file, editorMode, onContentChange }: EditorProps) {
 
   if (!file) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-background">
-        <p className="text-muted-foreground text-sm">Select a note to start editing</p>
+      <div className="flex flex-1 items-center justify-center bg-[#1e1e1e]">
+        <div className="flex flex-col items-center justify-center text-center animate-in fade-in duration-700">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[1.8rem] border border-white/5 bg-black/20 shadow-[inset_0_1px_rgba(255,255,255,0.05),0_12px_40px_rgba(0,0,0,0.18)]">
+            <FileText className="h-8 w-8 text-white/40" strokeWidth={1.5} />
+          </div>
+          <h3 className="text-base font-medium tracking-tight text-white/90">No note selected</h3>
+          <p className="mt-2 max-w-[200px] text-[13px] leading-relaxed text-white/50">
+            Select a note from the sidebar or press <kbd className="px-1.5 py-0.5 rounded-md bg-black/30 border border-white/10 font-mono text-[10px] mx-0.5">Alt + N</kbd> to create a new one.
+          </p>
+        </div>
       </div>
     );
   }

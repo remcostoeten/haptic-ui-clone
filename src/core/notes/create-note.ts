@@ -13,6 +13,7 @@ export async function createNote(input: CreateNoteInput): Promise<NoteFile> {
     content: input.content,
     richContent: input.richContent ?? markdownToRichDocument(input.content as string),
     preferredEditorMode: input.preferredEditorMode ?? "block",
+    journalMeta: input.journalMeta,
     parentId: input.parentId ?? null,
     createdAt: timestamp,
     modifiedAt: input.updatedAt ?? timestamp,

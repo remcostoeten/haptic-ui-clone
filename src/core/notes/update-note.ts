@@ -1,4 +1,4 @@
-import { PERSISTED_STORE_NAMES } from "@/core/shared/persistence-types";
+import { PERSISTED_STORE_NAMES, type TagName } from "@/core/shared/persistence-types";
 import { getRecord, putRecord } from "@/core/storage";
 import type { NoteFile } from "@/types/notes";
 import { markdownToRichDocument } from "@/shared/lib/rich-document";
@@ -25,6 +25,12 @@ export async function updateNote(input: UpdateNoteInput): Promise<NoteFile | und
         ? markdownToRichDocument(input.content as string)
         : existing.richContent),
     preferredEditorMode: input.preferredEditorMode ?? existing.preferredEditorMode,
+    journalMeta: input.journalMeta
+      ? {
+          ...input.journalMeta,
+          tags: input.journalMeta.tags.map((tag) => tag as TagName),
+        }
+      : existing.journalMeta,
     parentId: input.parentId === undefined ? existing.parentId : input.parentId,
     updatedAt: (input.updatedAt ?? new Date()).toISOString() as typeof existing.updatedAt,
   });

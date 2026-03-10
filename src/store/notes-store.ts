@@ -13,7 +13,13 @@ import {
 } from "@/core/folders";
 import type { FolderId, MarkdownContent, NoteId } from "@/core/shared/persistence-types";
 import type { SaveStatus } from "@/shared/components/save-status-badge";
-import type { NoteEditorMode, NoteFile, NoteFolder, RichTextDocument } from "@/types/notes";
+import type {
+  JournalMetadata,
+  NoteEditorMode,
+  NoteFile,
+  NoteFolder,
+  RichTextDocument,
+} from "@/types/notes";
 import { usePreferencesStore, type TemplateStyle } from "@/store/preferences-store";
 import { markdownToRichDocument } from "@/shared/lib/rich-document";
 
@@ -272,6 +278,7 @@ type NotesState = {
       preferredEditorMode?: NoteEditorMode;
     },
   ) => void;
+  updateFileMetadata: (id: string, metadata: Partial<JournalMetadata>) => void;
   renameFile: (id: string, name: string) => void;
   renameFolder: (id: string, name: string) => void;
   deleteFile: (id: string) => void;
@@ -457,6 +464,58 @@ export const useNotesStore = create<NotesState>()((set, get) => ({
     }, 220);
 
     contentSaveTimeouts.set(id, timeoutId);
+  },
+
+  updateFileMetadata: (id, metadata) => {
+    const updatedAt = new Date();
+    let nextJournalMeta: JournalMetadata | undefined;
+
+    set((state) => ({
+      files: state.files.map((file) => {
+        if (file.id !== id) {
+          return file;
+        }
+
+        nextJournalMeta = {
+          tags: metadata.tags ?? file.journalMeta?.tags ?? [],
+          mood: metadata.mood ?? file.journalMeta?.mood,
+          weather: metadata.weather ?? file.journalMeta?.weather,
+          location: metadata.location ?? file.journalMeta?.location,
+        };
+
+        return {
+          ...file,
+          journalMeta: nextJournalMeta,
+          modifiedAt: updatedAt,
+        };
+      }),
+      saveStates: { ...state.saveStates, [id]: "saving" },
+    }));
+
+    if (!nextJournalMeta) {
+      return;
+    }
+
+    void updateNote({
+      id: id as NoteId,
+      journalMeta: nextJournalMeta,
+      updatedAt,
+    })
+      .then(() => {
+        set((state) => ({
+          saveStates: { ...state.saveStates, [id]: "saved" },
+        }));
+        scheduleSaveStatusReset(id, () => {
+          set((state) => ({
+            saveStates: { ...state.saveStates, [id]: "idle" },
+          }));
+        });
+      })
+      .catch(() => {
+        set((state) => ({
+          saveStates: { ...state.saveStates, [id]: "error" },
+        }));
+      });
   },
 
   renameFile: (id, name) => {
